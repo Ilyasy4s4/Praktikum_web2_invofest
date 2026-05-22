@@ -2,22 +2,26 @@ import { useEffect, useState } from "react";
 
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, type SubmitHandler, type Resolver } from "react-hook-form";
 
-import { useNavigate } from "react-router-dom";
+import {
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 
 import InputText from "../../components/ui/InputText";
 import InputSelectEvent from "../../components/ui/Select";
 import InputDate from "../../components/ui/InputDate";
 import Textarea from "../../components/ui/TextArea";
 import Button from "../../components/ui/Button";
-// TYPE DATA CATEGORY
+
+// TYPE CATEGORY
 interface Category {
   id: number;
   name: string;
 }
 
-// TYPE DATA SPEAKER
+// TYPE SPEAKER
 interface Speaker {
   id: number;
   name: string;
@@ -29,45 +33,62 @@ const schema = z.object({
 
   location: z.string().min(1, "Lokasi wajib diisi"),
 
-  categoryId: z.number().min(1, "Kategori wajib dipilih"),
+  categoryId: z.preprocess(
+    (value) => Number(value),
+    z.number().min(1, "Kategori wajib dipilih")
+  ),
 
-  speakerId: z.number().min(1, "Speaker wajib dipilih"),
+  speakerId: z.preprocess(
+    (value) => Number(value),
+    z.number().min(1, "Speaker wajib dipilih")
+  ),
 
   dateEvent: z.string().min(1, "Tanggal wajib diisi"),
 
   description: z.string().min(1, "Deskripsi wajib diisi"),
 });
 
-// TYPE FORM
 type FormData = z.infer<typeof schema>;
 
-export default function EventCreate() {
+export default function EventEdit() {
 
   const navigate = useNavigate();
 
-  // STATE
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [speakers, setSpeakers] = useState<Speaker[]>([]);
+  const { id } = useParams();
 
-  // REACT HOOK FORM
+  // STATE
+  const [categories, setCategories] =
+    useState<Category[]>([]);
+
+  const [speakers, setSpeakers] =
+    useState<Speaker[]>([]);
+
+  // FORM
   const {
     register,
     handleSubmit,
     setValue,
     formState: { errors },
   } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as Resolver<FormData>,
   });
 
   // FETCH DATA
   useEffect(() => {
+
     fetchCategories();
+
     fetchSpeakers();
+
+    fetchEvent();
+
   }, []);
 
   // FETCH CATEGORY
   const fetchCategories = async () => {
+
     try {
+
       const response = await fetch(
         "http://localhost:3000/categories"
       );
@@ -77,13 +98,17 @@ export default function EventCreate() {
       setCategories(data);
 
     } catch (error) {
+
       console.log(error);
+
     }
   };
 
   // FETCH SPEAKER
   const fetchSpeakers = async () => {
+
     try {
+
       const response = await fetch(
         "http://localhost:3000/speakers"
       );
@@ -93,59 +118,100 @@ export default function EventCreate() {
       setSpeakers(data);
 
     } catch (error) {
+
       console.log(error);
+
     }
   };
 
-// SUBMIT EVENT
-const onSubmit = async (data: FormData) => {
+  // FETCH EVENT BY ID
+  const fetchEvent = async () => {
 
-  try {
+    try {
 
-    const response = await fetch(
-      "http://localhost:3000/events",
-      {
-        method: "POST",
+      const response = await fetch(
+        `http://localhost:3000/events/${id}`
+      );
 
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const data = await response.json();
 
-        body: JSON.stringify(data),
-      }
-    );
+      setValue("name", data.name);
 
-    if (!response.ok) {
-      throw new Error("Gagal menambahkan event");
+      setValue("location", data.location);
+
+      setValue("categoryId", data.categoryId);
+
+      setValue("speakerId", data.speakerId);
+
+      setValue(
+        "dateEvent",
+        data.dateEvent.split("T")[0]
+      );
+
+      setValue(
+        "description",
+        data.description
+      );
+
+    } catch (error) {
+
+      console.log(error);
+
     }
+  };
 
-    alert("Event berhasil ditambahkan!");
+  // UPDATE EVENT
+  const onSubmit: SubmitHandler<FormData> = async (
+    data
+  ) => {
 
-    navigate("/dashboard/event");
+    try {
 
-  } catch (error) {
+      const response = await fetch(
+        `http://localhost:3000/events/${id}`,
+        {
+          method: "PUT",
 
-    console.log(error);
+          headers: {
+            "Content-Type": "application/json",
+          },
 
-    alert("Gagal menambahkan event");
-  }
-};
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          "Gagal update event"
+        );
+      }
+
+      alert("Event berhasil diupdate!");
+
+      navigate("/dashboard/event");
+
+    } catch (error) {
+
+      console.log(error);
+
+      alert("Gagal update event");
+    }
+  };
+
   return (
     <div className="p-8 bg-[#F3F4F6] min-h-full flex justify-center">
+
       <div className="w-full max-w-3xl bg-white p-10 rounded-[2.5rem] shadow-sm border border-gray-100">
 
-        {/* TITLE */}
         <h2 className="text-3xl font-bold text-[#7B1D3F] mb-8 border-b border-gray-50 pb-4">
-          New Event
+          Edit Event
         </h2>
 
-        {/* FORM */}
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-6"
         >
 
-          {/* NAMA EVENT */}
           <InputText
             label="Nama Event"
             nama="name"
@@ -153,7 +219,6 @@ const onSubmit = async (data: FormData) => {
             error={errors.name?.message}
           />
 
-          {/* LOKASI */}
           <InputText
             label="Lokasi"
             nama="location"
@@ -161,7 +226,6 @@ const onSubmit = async (data: FormData) => {
             error={errors.location?.message}
           />
 
-          {/* CATEGORY & SPEAKER */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             <InputSelectEvent
@@ -186,7 +250,6 @@ const onSubmit = async (data: FormData) => {
 
           </div>
 
-          {/* DATE */}
           <InputDate
             label="Tanggal Event"
             nama="dateEvent"
@@ -195,7 +258,6 @@ const onSubmit = async (data: FormData) => {
             error={errors.dateEvent?.message}
           />
 
-          {/* DESCRIPTION */}
           <Textarea
             label="Deskripsi"
             nama="description"
@@ -203,17 +265,16 @@ const onSubmit = async (data: FormData) => {
             error={errors.description?.message}
           />
 
-          {/* BUTTON */}
-          <div className="pt-4">
-            <Button
-              label="Add Event"
-              variant="primary"
-              className="w-full md:w-auto bg-[#7B1D3F] hover:bg-[#5a152e] text-white px-12 py-4 rounded-2xl font-bold shadow-lg transition-all"
-            />
-          </div>
+          <Button
+            label="Update Event"
+            variant="primary"
+            className="w-full md:w-auto bg-[#7B1D3F] hover:bg-[#5a152e] text-white px-12 py-4 rounded-2xl font-bold shadow-lg transition-all"
+          />
 
         </form>
+
       </div>
+
     </div>
   );
 }

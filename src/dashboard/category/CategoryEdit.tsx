@@ -1,10 +1,18 @@
+import { useEffect } from "react";
+
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import { useForm } from "react-hook-form";
+
 import { z } from "zod";
 
-import { useNavigate } from "react-router-dom";
+import {
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 
 import InputText from "../../components/ui/InputText";
+
 import Button from "../../components/ui/Button";
 
 // TYPE
@@ -16,23 +24,52 @@ type FormData = {
 const schema = z.object({
   name: z.string().min(
     1,
-    "Nama Category harus diisi"
+    "Nama category wajib diisi"
   ),
 });
 
-export default function CategoryCreate() {
+export default function CategoryEdit() {
 
   const navigate = useNavigate();
+
+  const { id } = useParams();
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
-  // SUBMIT
+  // FETCH CATEGORY BY ID
+  useEffect(() => {
+
+    fetchCategory();
+
+  }, [id]);
+
+  const fetchCategory = async () => {
+
+    try {
+
+      const response = await fetch(
+        `http://localhost:3000/categories/${id}`
+      );
+
+      const data = await response.json();
+
+      setValue("name", data.name);
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+  };
+
+  // UPDATE CATEGORY
   const onSubmit = async (
     data: FormData
   ) => {
@@ -40,9 +77,9 @@ export default function CategoryCreate() {
     try {
 
       const response = await fetch(
-        "http://localhost:3000/categories",
+        `http://localhost:3000/categories/${id}`,
         {
-          method: "POST",
+          method: "PUT",
 
           headers: {
             "Content-Type": "application/json",
@@ -54,11 +91,11 @@ export default function CategoryCreate() {
 
       if (!response.ok) {
         throw new Error(
-          "Gagal menambahkan kategori"
+          "Gagal update category"
         );
       }
 
-      alert("Kategori berhasil ditambahkan!");
+      alert("Category berhasil diupdate!");
 
       navigate("/dashboard/category");
 
@@ -66,7 +103,7 @@ export default function CategoryCreate() {
 
       console.log(error);
 
-      alert("Gagal menambahkan kategori");
+      alert("Gagal update category");
     }
   };
 
@@ -76,7 +113,7 @@ export default function CategoryCreate() {
       <div className="w-full max-w-md bg-white p-10 rounded-[2.5rem] shadow-sm border border-gray-100">
 
         <h2 className="text-2xl font-bold text-[#7B1D3F] mb-8 border-b border-gray-50 pb-4">
-          New Category
+          Edit Category
         </h2>
 
         <form
@@ -92,7 +129,7 @@ export default function CategoryCreate() {
           />
 
           <Button
-            label="Simpan Kategori"
+            label="Update Category"
             variant="primary"
             className="w-full bg-[#7B1D3F] hover:bg-[#5a152e] text-white py-4 rounded-2xl font-bold shadow-md transition-all"
           />

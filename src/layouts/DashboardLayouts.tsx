@@ -17,6 +17,7 @@ export default function DashboardLayouts() {
     { name: "Category Event", path: "/dashboard/category" },
     { name: "Event", path: "/dashboard/event" },
     { name: "Pembicara", path: "/dashboard/seminar" },
+    { name: "Biodata", path: "/dashboard/biodata" }
   ];
 
   return (
