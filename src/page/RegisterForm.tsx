@@ -14,7 +14,7 @@ import Textarea from "../components/ui/TextArea";
 const schema = z
   .object({
     nama: z.string().min(1, "Nama harus diisi"),
-    email: z.string().trim().toLowerCase().email("Email tidak valid"),
+    nim: z.string().trim().toLowerCase().email("Email tidak valid"),
     password: z.string().min(8, "Password minimal 8 karakter"),
     confirmPassword: z.string().min(1, "Konfirmasi password wajib diisi"),
     event: z.string().min(1, "Event harus dipilih"),
@@ -45,7 +45,7 @@ export default function RegisterForm() {
 
     const userToSave = {
       nama: data.nama,
-      email: data.email,
+      nim: data.nim,
       password: data.password,
       event: data.event,
       bio: data.bio
@@ -88,10 +88,10 @@ export default function RegisterForm() {
           />
 
           <InputText
-            label="Email"
-            nama="email"
+            label="NIM"
+            nama="nim"
             register={register}
-            error={errors.email?.message}
+            error={errors.nim?.message}
           />
 
           {/**/}
@@ -116,8 +116,7 @@ export default function RegisterForm() {
             nama="event"
             register={register}
             setValue={setValue}
-            error={errors.event?.message}
-          />
+            error={errors.event?.message} options={[]}          />
 
           <Textarea
             label="Bio Singkat"
